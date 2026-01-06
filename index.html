@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Birthday Surprise!</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+</head>
+<body>
+<audio id="pouf-sound" src="assets/pouf.mp3" preload="auto"></audio>
+<audio id="explosion-sound" src="assets/explosion.mp3" preload="auto"></audio>
+<audio id="foff-sound" src="assets/foff.mp3" preload="auto"></audio>
+<video id="explosion-video" src="assets/explosion.webm" preload="auto" muted playsinline></video>
+
+<div class="main-container">
+    <div class="background-wrapper">
+        <!-- First background (visible initially) -->
+        <img src="assets/backg1.png" class="bg-design bg-design-1 active" alt="Birthday Design">
+        <!-- Second background (shown after explosion) -->
+        <img src="assets/backg2.png" class="bg-design bg-design-2" alt="Birthday Celebration">
+
+        <div id="flame-container">
+            <!-- Flames with positions -->
+            <div class="flame" style="top: 40%; left: 44.5%;" onclick="blow(this)"></div>
+            <div class="flame" style="top: 39%; left: 50.7%;" onclick="blow(this)"></div>
+            <div class="flame" style="top: 40.2%; left: 52.6%;" onclick="blow(this)"></div>
+            <div class="flame" style="top: 39%; left: 46.5%;" onclick="blow(this)"></div>
+            <div class="flame" style="top: 36.2%; left: 48.4%;" onclick="blow(this)"></div>
+        </div>
+
+        <div id="celebration-layer">
+            <div id="transition-text" class="transition-text"></div>
+            <div id="ransom-title" class="birthday-title"></div>
+            <div id="pokemon-stamps"></div>
+            <div id="cats-container"></div>
+        </div>
+    </div>
+
+    <h2 class="instruction">Click the candles to blow them out!</h2>
+    <h2 class="instruction">And make a wish!</h2>
+</div>
+
+<div id="coord-hud"></div>
+
+<script src="script.js"></script>
+</body>
+</html>
