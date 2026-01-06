@@ -1,3 +1,105 @@
+
+let allAssetsLoaded = false;
+let totalAssetsToLoad = 0;
+let assetsLoadedCount = 0;
+
+// Count all assets we need to preload
+function countAssets() {
+    // Audio files
+    totalAssetsToLoad += 3; // pouf, explosion, foff
+
+    // Video
+    totalAssetsToLoad += 1; // explosion.webm
+
+    // Background images
+    totalAssetsToLoad += 2; // backg1.png, backg2.png
+
+    // Pokemon images (preload all 9)
+    totalAssetsToLoad += 9;
+
+    // Cat images (preload all 10)
+    totalAssetsToLoad += 10;
+
+    // Font images (preload first 5 letters of each font for "HAPPY BIRTHDAY")
+    // "HAPPY BIRTHDAY" = 13 letters × 5 fonts = 65, but we'll preload less
+    totalAssetsToLoad += 30; // Preload most common letters
+
+    console.log(`Total assets to load: ${totalAssetsToLoad}`);
+}
+
+// Preload images function
+function preloadImage(src, callback) {
+    const img = new Image();
+    img.onload = callback;
+    img.onerror = callback; // Even if error, continue
+    img.src = src;
+}
+
+// Asset loaded callback
+function assetLoaded() {
+    assetsLoadedCount++;
+    const percent = Math.round((assetsLoadedCount / totalAssetsToLoad) * 100);
+
+    // Update loading text
+    const loadingText = document.querySelector('.loading-text');
+    if (loadingText) {
+        loadingText.textContent = `Loading birthday surprise... ${percent}%`;
+    }
+
+    if (assetsLoadedCount >= totalAssetsToLoad) {
+        allAssetsLoaded = true;
+        console.log('All assets loaded! Starting celebration...');
+
+        // Hide loading screen
+        setTimeout(() => {
+            const loadingScreen = document.getElementById('loading-screen');
+            if (loadingScreen) {
+                loadingScreen.classList.add('hidden');
+                setTimeout(() => {
+                    loadingScreen.style.display = 'none';
+                }, 500);
+            }
+
+            // Enable candles
+            document.querySelectorAll('.flame').forEach(flame => {
+                flame.style.pointerEvents = 'auto';
+            });
+        }, 500);
+    }
+}
+
+// Preload all assets
+function preloadAllAssets() {
+    countAssets();
+
+    // Preload audio files
+    const audioFiles = ['pouf.mp3', 'explosion.mp3', 'foff.mp3'];
+    audioFiles.forEach(file => {
+        preloadImage(`assets/${file}`, assetLoaded);
+    });
+
+    // Preload background images
+    preloadImage('assets/backg1.png', assetLoaded);
+    preloadImage('assets/backg2.png', assetLoaded);
+
+    // Preload all pokemon images
+    for (let i = 1; i <= 9; i++) {
+        preloadImage(`assets/pokemon${i}.png`, assetLoaded);
+    }
+
+    // Preload all cat images
+    for (let i = 1; i <= 10; i++) {
+        preloadImage(`cats/cat${i}.png`, assetLoaded);
+    }
+
+    // Preload font images for "HAPPY BIRTHDAY" letters
+    const letters = ['H', 'A', 'P', 'Y', 'B', 'I', 'R', 'T', 'D'];
+    for (let font = 1; font <= 5; font++) {
+        letters.forEach(letter => {
+            preloadImage(`font${font}/${letter}${font}.png`, assetLoaded);
+        });
+    }
+}
 // Constants
 const TOTAL_FLAMES = document.querySelectorAll('.flame').length;
 const TOTAL_POKEMON = 9;
@@ -20,14 +122,36 @@ let catSpinningInterval = null;
 let secondPhaseActive = false;
 
 // Initialize coordinate HUD
-const coordHUD = document.getElementById('coord-hud') || createCoordHUD();
+document.addEventListener('DOMContentLoaded', function() {
+    // Start preloading
+    preloadAllAssets();
 
-function createCoordHUD() {
-    const hud = document.createElement('div');
-    hud.id = 'coord-hud';
-    document.body.appendChild(hud);
-    return hud;
-}
+    // Initialize HUD
+    const coordHUD = document.getElementById('coord-hud') || createCoordHUD();
+
+    // Disable candles until assets are loaded
+    document.querySelectorAll('.flame').forEach(flame => {
+        flame.style.pointerEvents = 'none';
+        flame.style.cursor = 'wait';
+    });
+
+    // Check if assets are already loaded (cached)
+    setTimeout(() => {
+        if (assetsLoadedCount > 0 && !allAssetsLoaded) {
+            // Some assets loaded, show progress
+        } else if (!allAssetsLoaded) {
+            // Force enable after 5 seconds max (for slow connections)
+            setTimeout(() => {
+                if (!allAssetsLoaded) {
+                    console.warn('Forcing enable after timeout');
+                    allAssetsLoaded = true;
+                    assetLoaded(); // Trigger final load
+                }
+            }, 5000);
+        }
+    }, 1000);
+});
+
 
 // Event Listeners
 document.addEventListener('mousemove', updateCoordHUD);
@@ -44,6 +168,11 @@ function playSound(elementId) {
 
 // Main Functions
 function blow(flame) {
+    if (!allAssetsLoaded) {
+        console.log('Please wait, still loading assets...');
+        return;
+    }
+
     playSound('pouf-sound');
     createSmokeEffect(flame);
     flame.style.display = 'none';
@@ -62,6 +191,13 @@ function createSmokeEffect(flame) {
 }
 
 function startCelebration() {
+    // Double-check that critical assets are loaded
+    if (!allAssetsLoaded) {
+        console.warn('Assets not fully loaded, delaying celebration...');
+        setTimeout(startCelebration, 500);
+        return;
+    }
+
     const celebrationLayer = document.getElementById('celebration-layer');
     const instructions = document.querySelectorAll('.instruction');
 
@@ -240,32 +376,48 @@ function triggerBombEffect() {
     const explosion = document.getElementById('explosion-video');
     if (!explosion) return;
 
-    explosion.style.display = 'block';
-    explosion.load();
-    explosion.currentTime = 0;
+    // Ensure video is fully loaded
+    if (explosion.readyState < 3) { // 3 = HAVE_FUTURE_DATA, 4 = HAVE_ENOUGH_DATA
+        console.log('Video still loading, waiting...');
+        explosion.oncanplay = function() {
+            explosion.oncanplay = null;
+            playExplosion();
+        };
+    } else {
+        playExplosion();
+    }
 
-    // Play explosion sound
-    playSound('explosion-sound');
+    function playExplosion() {
+        explosion.style.display = 'block';
+        explosion.currentTime = 0;
 
-    // Add shake effect
-    document.body.classList.add('shake');
+        // Play explosion sound
+        playSound('explosion-sound');
 
-    explosion.onended = () => {
-        explosion.style.display = 'none';
-        document.body.classList.remove('shake');
+        // Add shake effect
+        document.body.classList.add('shake');
 
-        // Switch to second background and start cat animation
-        switchToSecondBackground();
-        spawnCats(); // FIXED: Changed from spawnCatsInGrid() to spawnCats()
+        explosion.onended = () => {
+            explosion.style.display = 'none';
+            document.body.classList.remove('shake');
 
-        // After 3 seconds, make pokemons spin too
-        setTimeout(() => {
-            startPokemonSpin();
-            secondPhaseActive = true;
-        }, 3000);
-    };
+            // Switch to second background and start cat animation
+            switchToSecondBackground();
+            spawnCats();
 
-    explosion.play().catch(e => console.warn('Explosion video failed to play:', e));
+            // After 3 seconds, make pokemons spin too
+            setTimeout(() => {
+                startPokemonSpin();
+                secondPhaseActive = true;
+            }, 3000);
+        };
+
+        explosion.play().catch(e => {
+            console.warn('Explosion video failed to play:', e);
+            // Fallback: if video fails, still continue with other effects
+            explosion.onended();
+        });
+    }
 
     // Play foff sound after explosion
     setTimeout(() => {
@@ -644,3 +796,14 @@ function copyCoordinates(e) {
         setTimeout(() => updateCoordHUD(e), 1000);
     }).catch(e => console.error('Failed to copy:', e));
 }
+
+window.addEventListener('load', function() {
+    console.log('Page fully loaded');
+    // Enable candles after 2 seconds minimum
+    setTimeout(() => {
+        document.querySelectorAll('.flame').forEach(flame => {
+            flame.style.pointerEvents = 'auto';
+            flame.style.cursor = 'pointer';
+        });
+    }, 2000);
+});

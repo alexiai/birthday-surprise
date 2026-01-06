@@ -4,22 +4,81 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Birthday Surprise!</title>
+
+    <!-- Preconnect to external resources -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+
+    <!-- Preload critical resources -->
+    <link rel="preload" href="style.css" as="style">
+    <link rel="preload" href="assets/backg1.png" as="image">
+    <link rel="preload" href="assets/pokemon1.png" as="image">
+    <link rel="preload" href="assets/explosion.mp3" as="audio">
+
+    <!-- Load fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@700&display=swap" rel="stylesheet">
+
+    <!-- Load CSS -->
     <link rel="stylesheet" href="style.css">
+
+    <!-- Load confetti library -->
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <!-- Load critical JS early -->
+    <script>
+        // Simple preloader to track asset loading
+        window.assetsLoaded = false;
+        window.assetsToLoad = 0;
+        window.assetsLoadedCount = 0;
+
+        function assetLoaded() {
+            window.assetsLoadedCount++;
+            if (window.assetsLoadedCount >= window.assetsToLoad) {
+                window.assetsLoaded = true;
+                console.log('All assets loaded!');
+            }
+        }
+    </script>
 </head>
 <body>
-<audio id="pouf-sound" src="assets/pouf.mp3" preload="auto"></audio>
-<audio id="explosion-sound" src="assets/explosion.mp3" preload="auto"></audio>
-<audio id="foff-sound" src="assets/foff.mp3" preload="auto"></audio>
-<video id="explosion-video" src="assets/explosion.webm" preload="auto" muted playsinline></video>
+<!-- Preload audio -->
+<audio id="pouf-sound" src="assets/pouf.mp3" preload="auto" oncanplaythrough="assetLoaded()"></audio>
+<audio id="explosion-sound" src="assets/explosion.mp3" preload="auto" oncanplaythrough="assetLoaded()"></audio>
+<audio id="foff-sound" src="assets/foff.mp3" preload="auto" oncanplaythrough="assetLoaded()"></audio>
+
+<!-- Preload video -->
+<video id="explosion-video" src="assets/explosion.webm" preload="auto" muted playsinline oncanplaythrough="assetLoaded()"></video>
+
+<!-- Hidden preloader for critical images -->
+<div style="display: none;">
+    <!-- Preload background images -->
+    <img src="assets/backg1.png" onload="assetLoaded()" alt="">
+    <img src="assets/backg2.png" onload="assetLoaded()" alt="">
+
+    <!-- Preload a few pokemon images (we'll preload more in JS) -->
+    <img src="assets/pokemon1.png" onload="assetLoaded()" alt="">
+    <img src="assets/pokemon2.png" onload="assetLoaded()" alt="">
+    <img src="assets/pokemon3.png" onload="assetLoaded()" alt="">
+
+    <!-- Preload a few cat images -->
+    <img src="cats/cat1.png" onload="assetLoaded()" alt="">
+    <img src="cats/cat2.png" onload="assetLoaded()" alt="">
+</div>
 
 <div class="main-container">
+    <!-- Loading indicator -->
+    <div id="loading-screen" class="loading-screen">
+        <div class="loading-spinner"></div>
+        <p class="loading-text">Loading birthday surprise...</p>
+    </div>
+
     <div class="background-wrapper">
         <!-- First background (visible initially) -->
-        <img src="assets/backg1.png" class="bg-design bg-design-1 active" alt="Birthday Design">
+        <img src="assets/backg1.png" class="bg-design bg-design-1 active" alt="Birthday Design"
+             loading="eager" onload="assetLoaded()">
         <!-- Second background (shown after explosion) -->
-        <img src="assets/backg2.png" class="bg-design bg-design-2" alt="Birthday Celebration">
+        <img src="assets/backg2.png" class="bg-design bg-design-2" alt="Birthday Celebration"
+             loading="lazy" onload="assetLoaded()">
 
         <div id="flame-container">
             <!-- Flames with positions -->
@@ -44,6 +103,7 @@
 
 <div id="coord-hud"></div>
 
-<script src="script.js"></script>
+<!-- Load main script after DOM is ready -->
+<script src="script.js" defer></script>
 </body>
 </html>
