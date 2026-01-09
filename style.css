@@ -81,7 +81,7 @@ body, html {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    font-size: 3rem;
+    font-size: 1.8rem;
     font-weight: 700;
     color: #203920;
     text-shadow: 0 0 20px rgb(253, 221, 90);
@@ -544,4 +544,59 @@ img {
     will-change: transform, opacity;
     backface-visibility: hidden;
     transform: translateZ(0);
+}
+
+/* Back to Cake Button */
+.back-to-cake-btn {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    padding: 12px 24px;
+    background: linear-gradient(145deg, #ff6b6b, #ff8e8e);
+    border: none;
+    border-radius: 25px;
+    color: white;
+    font-family: 'Fredoka', sans-serif;
+    font-weight: 700;
+    font-size: 1.2rem;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+    transition: all 0.3s ease;
+    opacity: 0;
+    transform: translateY(-20px);
+    pointer-events: none;
+    z-index: 1000;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.back-to-cake-btn.visible {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+.back-to-cake-btn:hover {
+    background: linear-gradient(145deg, #203920, #fddd5a);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgb(179, 239, 179);
+}
+
+.back-to-cake-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 10px rgba(49, 103, 49, 0.65);
+}
+
+.back-to-cake-btn:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgb(220, 182, 93);
+}
+
+/* Optional: Add a pulsing animation for attention */
+@keyframes gentlePulse {
+    0%, 100% { box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3); }
+    50% { box-shadow: 0 4px 20px rgba(255, 107, 107, 0.5); }
+}
+
+.back-to-cake-btn.pulse {
+    animation: gentlePulse 2s infinite;
 }

@@ -1,104 +1,111 @@
-
+// ==================== SIMPLIFIED PRELOADING SYSTEM ====================
 let allAssetsLoaded = false;
-let totalAssetsToLoad = 0;
 let assetsLoadedCount = 0;
+const assetsToPreload = [];
 
-// Count all assets we need to preload
-function countAssets() {
+// Add all assets to preload array
+function addAssetsToPreload() {
     // Audio files
-    totalAssetsToLoad += 3; // pouf, explosion, foff
+    assetsToPreload.push('assets/pouf.mp3');
+    assetsToPreload.push('assets/explosion.mp3');
+    assetsToPreload.push('assets/foff.mp3');
 
-    // Video
-    totalAssetsToLoad += 1; // explosion.webm
+    // Video (handled separately)
 
     // Background images
-    totalAssetsToLoad += 2; // backg1.png, backg2.png
+    assetsToPreload.push('assets/backg1.png');
+    assetsToPreload.push('assets/backg2.png');
 
-    // Pokemon images (preload all 9)
-    totalAssetsToLoad += 9;
+    // Pokemon images
+    for (let i = 1; i <= 9; i++) {
+        assetsToPreload.push(`assets/pokemon${i}.png`);
+    }
 
-    // Cat images (preload all 10)
-    totalAssetsToLoad += 10;
+    // Cat images
+    for (let i = 1; i <= 10; i++) {
+        assetsToPreload.push(`cats/cat${i}.png`);
+    }
 
-    // Font images (preload first 5 letters of each font for "HAPPY BIRTHDAY")
-    // "HAPPY BIRTHDAY" = 13 letters × 5 fonts = 65, but we'll preload less
-    totalAssetsToLoad += 30; // Preload most common letters
+    // Font images
+    const letters = ['H', 'A', 'P', 'Y', 'B', 'I', 'R', 'T', 'D'];
+    for (let font = 1; font <= 5; font++) {
+        letters.forEach(letter => {
+            assetsToPreload.push(`font${font}/${letter}${font}.png`);
+        });
+    }
 
-    console.log(`Total assets to load: ${totalAssetsToLoad}`);
-}
-
-// Preload images function
-function preloadImage(src, callback) {
-    const img = new Image();
-    img.onload = callback;
-    img.onerror = callback; // Even if error, continue
-    img.src = src;
+    console.log(`Will preload ${assetsToPreload.length} assets`);
 }
 
 // Asset loaded callback
 function assetLoaded() {
     assetsLoadedCount++;
-    const percent = Math.round((assetsLoadedCount / totalAssetsToLoad) * 100);
+    const percent = Math.min(100, Math.round((assetsLoadedCount / assetsToPreload.length) * 100));
 
-    // Update loading text
     const loadingText = document.querySelector('.loading-text');
     if (loadingText) {
         loadingText.textContent = `Loading birthday surprise... ${percent}%`;
     }
 
-    if (assetsLoadedCount >= totalAssetsToLoad) {
-        allAssetsLoaded = true;
-        console.log('All assets loaded! Starting celebration...');
-
-        // Hide loading screen
-        setTimeout(() => {
-            const loadingScreen = document.getElementById('loading-screen');
-            if (loadingScreen) {
-                loadingScreen.classList.add('hidden');
-                setTimeout(() => {
-                    loadingScreen.style.display = 'none';
-                }, 500);
-            }
-
-            // Enable candles
-            document.querySelectorAll('.flame').forEach(flame => {
-                flame.style.pointerEvents = 'auto';
-            });
-        }, 500);
+    if (assetsLoadedCount >= assetsToPreload.length) {
+        finishLoading();
     }
+}
+
+function finishLoading() {
+    allAssetsLoaded = true;
+    console.log(`✅ All ${assetsToPreload.length} assets loaded!`);
+
+    // Hide loading screen
+    setTimeout(() => {
+        const loadingScreen = document.getElementById('loading-screen');
+        if (loadingScreen) {
+            loadingScreen.classList.add('hidden');
+            setTimeout(() => {
+                loadingScreen.style.display = 'none';
+            }, 500);
+        }
+
+        // Enable candles
+        document.querySelectorAll('.flame').forEach(flame => {
+            flame.style.pointerEvents = 'auto';
+        });
+    }, 500);
 }
 
 // Preload all assets
 function preloadAllAssets() {
-    countAssets();
+    addAssetsToPreload();
 
-    // Preload audio files
-    const audioFiles = ['pouf.mp3', 'explosion.mp3', 'foff.mp3'];
+    console.log(`Starting to preload ${assetsToPreload.length} assets...`);
+
+    // Preload audio files (special handling)
+    const audioFiles = ['assets/pouf.mp3', 'assets/explosion.mp3', 'assets/foff.mp3'];
     audioFiles.forEach(file => {
-        preloadImage(`assets/${file}`, assetLoaded);
+        const audio = new Audio();
+        audio.src = file;
+        audio.preload = 'auto';
+        audio.oncanplaythrough = assetLoaded;
+        audio.onerror = assetLoaded;
     });
 
-    // Preload background images
-    preloadImage('assets/backg1.png', assetLoaded);
-    preloadImage('assets/backg2.png', assetLoaded);
-
-    // Preload all pokemon images
-    for (let i = 1; i <= 9; i++) {
-        preloadImage(`assets/pokemon${i}.png`, assetLoaded);
+    // Preload video
+    const video = document.getElementById('explosion-video');
+    if (video) {
+        video.oncanplaythrough = assetLoaded;
+        video.onerror = assetLoaded;
     }
 
-    // Preload all cat images
-    for (let i = 1; i <= 10; i++) {
-        preloadImage(`cats/cat${i}.png`, assetLoaded);
-    }
+    // Preload all images
+    assetsToPreload.forEach(src => {
+        // Skip audio files (already handled)
+        if (src.includes('.mp3')) return;
 
-    // Preload font images for "HAPPY BIRTHDAY" letters
-    const letters = ['H', 'A', 'P', 'Y', 'B', 'I', 'R', 'T', 'D'];
-    for (let font = 1; font <= 5; font++) {
-        letters.forEach(letter => {
-            preloadImage(`font${font}/${letter}${font}.png`, assetLoaded);
-        });
-    }
+        const img = new Image();
+        img.onload = assetLoaded;
+        img.onerror = assetLoaded;
+        img.src = src;
+    });
 }
 // Constants
 const TOTAL_FLAMES = document.querySelectorAll('.flame').length;
@@ -218,7 +225,7 @@ function showTransitionText() {
     if (!transitionText) return;
 
     const messages = [
-        " "
+        "Blow me now"
     ];
 
     const randomMessage = messages[Math.floor(Math.random() * messages.length)];
@@ -227,11 +234,11 @@ function showTransitionText() {
     // Show and then hide the transition text
     setTimeout(() => {
         transitionText.style.display = 'none';
-    }, 1300);
+    }, 600);
 }
 
 function showMainCelebration() {
-    initAnimatedTitle("HAPPY BIRTHDAY");
+    initAnimatedTitle("HAPPY BIRTHDAY NERD");
     spawnPokemon();
     launchConfetti();
 
@@ -240,8 +247,8 @@ function showMainCelebration() {
 
 function launchConfetti() {
     confetti({
-        particleCount: 250,
-        spread: 150,
+        particleCount: 300,
+        spread: 270,
         origin: { y: 0.6 }
     });
 }
@@ -460,17 +467,29 @@ function spawnCats() {
     // Shuffle the distribution
     shuffleArray(catDistribution);
 
+    // ==================== RECTANGLE BOUNDARY COORDINATES ====================
+    // Define rectangle corners (in percentages of screen)
+    const rectangleBoundary = {
+        topLeft: { x: 5, y: 5 },     // 5% from left, 5% from top
+        topRight: { x: 95, y: 5 },   // 95% from left, 5% from top
+        bottomLeft: { x: 5, y: 80 },  // 5% from left, 80% from top (MAX BOTTOM)
+        bottomRight: { x: 95, y: 80 } // 95% from left, 80% from top (MAX BOTTOM)
+    };
+
+    // Alternative: Just set max bottom
+    const MAX_BOTTOM = 80; // Cats won't go below 80% from top
+
     // Calculate matrix cell positions with random offsets
     const rows = 6;
     const cols = 6;
 
-    // NEGATIVE PADDING to start from top/left edges
-    const horizontalPadding = -2; // -2% padding (starts BEFORE left edge)
-    const verticalPadding = -2;   // -2% padding (starts BEFORE top edge)
+    // PADDING adjusted to stay within rectangle
+    const horizontalPadding = 5; // 5% padding (stays within 5-95%)
+    const verticalPadding = 5;   // 5% padding (stays within 5-80%)
 
-    // Available width/height with negative padding (makes grid larger than screen)
-    const availableWidth = 100 - (2 * horizontalPadding);  // 104% width
-    const availableHeight = 100 - (2 * verticalPadding);   // 104% height
+    // Available width/height within rectangle
+    const availableWidth = rectangleBoundary.bottomRight.x - rectangleBoundary.topLeft.x;  // 90% width
+    const availableHeight = MAX_BOTTOM - rectangleBoundary.topLeft.y;  // 75% height
 
     // Spacing within available area
     const cellWidth = availableWidth / cols;
@@ -485,8 +504,8 @@ function spawnCats() {
         const col = i % cols;
 
         // Calculate base position (center of each cell)
-        const baseX = horizontalPadding + (col * cellWidth) + (cellWidth / 2);
-        const baseY = verticalPadding + (row * cellHeight) + (cellHeight / 2);
+        const baseX = rectangleBoundary.topLeft.x + (col * cellWidth) + (cellWidth / 2);
+        const baseY = rectangleBoundary.topLeft.y + (row * cellHeight) + (cellHeight / 2);
 
         // Add random offset between 0.5% and 2% in both directions
         const getRandomOffset = () => {
@@ -498,9 +517,13 @@ function spawnCats() {
         const offsetX = getRandomOffset();
         const offsetY = getRandomOffset();
 
-        // Final position with offset
-        const finalX = baseX + offsetX;
-        const finalY = baseY + offsetY;
+        // Final position with offset, constrained to rectangle
+        let finalX = baseX + offsetX;
+        let finalY = baseY + offsetY;
+
+        // Ensure position stays within rectangle bounds
+        finalX = Math.max(rectangleBoundary.topLeft.x, Math.min(rectangleBoundary.bottomRight.x, finalX));
+        finalY = Math.max(rectangleBoundary.topLeft.y, Math.min(MAX_BOTTOM, finalY));
 
         // Create position object for this cat
         const position = {
@@ -515,27 +538,22 @@ function spawnCats() {
     // Start chaotic random animation
     startCatMatrixAnimation();
 
-    // Add an extra layer of chaos by randomly pulsing all cats - MORE EXTREME
+    // Add an extra layer of chaos by randomly pulsing all cats
     setInterval(() => {
-        if (Math.random() > 0.7) { // 30% chance for global chaos event
+        if (Math.random() > 0.7) {
             document.querySelectorAll('.cat-sticker').forEach(cat => {
                 cat.style.animationPlayState = 'running';
-                // Add VERY extreme scale effect
-                const randomScale = (Math.random() * 4) + 0.1; // 0.1 to 4.1 (more extreme)
+                const randomScale = (Math.random() * 4) + 0.1;
                 const currentTransform = cat.style.transform || '';
                 cat.style.transform = currentTransform.replace(/scale\([^)]*\)/, '') + ` scale(${randomScale})`;
-
-                // Add extreme color flash
                 cat.style.filter += ' brightness(3) saturate(3)';
-
-                // Reset after short time
                 setTimeout(() => {
                     cat.style.filter = cat.style.filter.replace(/ brightness\([^)]*\) saturate\([^)]*\)/, '');
                     cat.style.transform = currentTransform;
-                }, 150); // Shorter reset time for faster pulsation
+                }, 150);
             });
         }
-    }, 1500); // Global chaos check every 1.5 seconds (faster)
+    }, 1500);
 }
 
 // Helper function to shuffle array
@@ -807,3 +825,180 @@ window.addEventListener('load', function() {
         });
     }, 2000);
 });
+
+
+
+// Add this near your other state variables
+let backButtonAdded = false;
+
+// Add this function to show the back button
+function showBackToCakeButton() {
+    const backButton = document.getElementById('back-to-cake-btn');
+    if (!backButton) return;
+
+    // Add click event listener if not already added
+    if (!backButton.hasAttribute('data-listener-added')) {
+        backButton.addEventListener('click', resetToCakePage);
+        backButton.setAttribute('data-listener-added', 'true');
+    }
+
+    // Show the button with animation
+    setTimeout(() => {
+        backButton.classList.add('visible');
+        backButton.classList.add('pulse'); // Optional pulsing effect
+    }, 500);
+
+    backButtonAdded = true;
+}
+
+// Add this function to reset to cake page
+function resetToCakePage() {
+    console.log('Resetting to cake page...');
+
+    // Reset all state variables
+    flamesOut = 0;
+    secondPhaseActive = false;
+
+    // Clear intervals
+    clearTitleAnimation();
+    if (catSpinningInterval) {
+        clearInterval(catSpinningInterval);
+        catSpinningInterval = null;
+    }
+
+    // Stop any animations
+    document.querySelectorAll('.cat-sticker, .pokemon-sticker').forEach(el => {
+        el.style.animation = 'none';
+    });
+
+    // Hide celebration layer
+    const celebrationLayer = document.getElementById('celebration-layer');
+    if (celebrationLayer) {
+        celebrationLayer.style.display = 'none';
+    }
+
+    // Show instructions
+    document.querySelectorAll('.instruction').forEach(inst => {
+        inst.style.display = 'block';
+    });
+
+    // Reset background to first one
+    const bg1 = document.querySelector('.bg-design-1');
+    const bg2 = document.querySelector('.bg-design-2');
+    if (bg1 && bg2) {
+        bg1.classList.add('active');
+        bg2.classList.remove('active');
+    }
+
+    // Reset candles (flames)
+    document.querySelectorAll('.flame').forEach(flame => {
+        flame.style.display = 'block';
+    });
+
+    // Clear pokemon and cats
+    const pokemonContainer = document.getElementById('pokemon-stamps');
+    const catsContainer = document.getElementById('cats-container');
+    if (pokemonContainer) pokemonContainer.innerHTML = '';
+    if (catsContainer) catsContainer.innerHTML = '';
+
+    // Hide ransom title
+    const ransomTitle = document.getElementById('ransom-title');
+    if (ransomTitle) {
+        ransomTitle.classList.remove('visible');
+        ransomTitle.innerHTML = '';
+    }
+
+    // Hide back button
+    const backButton = document.getElementById('back-to-cake-btn');
+    if (backButton) {
+        backButton.classList.remove('visible');
+        backButton.classList.remove('pulse');
+    }
+
+    // Reset transition text
+    const transitionText = document.getElementById('transition-text');
+    if (transitionText) {
+        transitionText.style.display = 'none';
+        transitionText.textContent = '';
+    }
+
+    // Play a sound for feedback (optional)
+    playSound('pouf-sound');
+
+    console.log('Reset complete!');
+}
+
+// Modify your startPokemonSpin function to show the button
+function startPokemonSpin() {
+    const pokemons = document.querySelectorAll('.pokemon-sticker');
+
+    pokemons.forEach(pokemon => {
+        pokemon.classList.add('spinning');
+
+        // Faster animation for pokemons too
+        const duration = (Math.random() * 1) + 1.5; // 1.5 to 2.5 seconds
+        pokemon.style.animationDuration = `0.4s, 2s, ${duration}s`;
+
+        // Add chaotic effects to pokemons too
+        if (Math.random() > 0.5) {
+            pokemon.style.animation = `popIn 0.4s ease-out forwards, float 2s ease-in-out infinite, spinAndScale ${duration}s ease-in-out infinite`;
+        }
+
+        // Add hover effect for pokemons with more chaos
+        pokemon.addEventListener('mouseenter', () => {
+            pokemon.style.transform = 'scale(1.5) rotate(180deg)';
+            pokemon.style.filter = 'hue-rotate(180deg) brightness(1.5)';
+            pokemon.style.transition = 'all 0.2s ease';
+            pokemon.style.zIndex = '100';
+        });
+
+        pokemon.addEventListener('mouseleave', () => {
+            pokemon.style.transform = '';
+            pokemon.style.filter = '';
+            pokemon.style.zIndex = 'auto';
+        });
+    });
+
+    // Make pokemons move more frequently and chaotically
+    if (!secondPhaseActive) {
+        setInterval(() => {
+            pokemons.forEach(pokemon => {
+                // Higher chance to move (50% instead of 30%)
+                if (Math.random() > 0.5) {
+                    // Move within a larger radius for more chaos
+                    const currentLeft = parseFloat(pokemon.style.left) || 50;
+                    const currentTop = parseFloat(pokemon.style.top) || 50;
+
+                    const offsetX = (Math.random() * 30) - 15; // -15% to +15% (more movement)
+                    const offsetY = (Math.random() * 30) - 15;
+
+                    const newLeft = Math.max(5, Math.min(95, currentLeft + offsetX));
+                    const newTop = Math.max(5, Math.min(95, currentTop + offsetY));
+
+                    pokemon.style.left = `${newLeft}%`;
+                    pokemon.style.top = `${newTop}%`;
+
+                    // Faster transition
+                    pokemon.style.transition = 'all 0.5s ease';
+
+                    // Add random rotation during movement
+                    const randomRotate = Math.random() * 360;
+                    pokemon.style.transform = `rotate(${randomRotate}deg)`;
+                }
+
+                // Occasionally change animation properties (30% chance)
+                if (Math.random() > 0.7) {
+                    const newDuration = (Math.random() * 1) + 1.5;
+                    pokemon.style.animationDuration = `0.4s, 2s, ${newDuration}s`;
+                }
+            });
+        }, 1500); // Check every 1.5 seconds (instead of 3) for more chaos
+    }
+
+    secondPhaseActive = true;
+
+    // ADD THIS: Show the back button after pokemon start spinning
+    setTimeout(() => {
+        showBackToCakeButton();
+    }, 1000); // Show button 1 second after pokemon start spinning
+}
